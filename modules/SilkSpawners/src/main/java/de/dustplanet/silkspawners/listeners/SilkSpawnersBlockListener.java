@@ -2,6 +2,7 @@ package de.dustplanet.silkspawners.listeners;
 
 import java.util.HashMap;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
@@ -15,6 +16,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.permissions.PermissionAttachmentInfo;
 
 import de.dustplanet.silkspawners.SilkSpawners;
 import de.dustplanet.silkspawners.events.SilkSpawnersSpawnerBreakEvent;
@@ -115,7 +117,23 @@ public class SilkSpawnersBlockListener implements Listener {
             if (plugin.mobs.contains("creatures." + entityID + ".silkDropChance")) {
                 dropChance = plugin.mobs.getInt("creatures." + entityID + ".silkDropChance", 100);
             } else {
-                dropChance = plugin.config.getInt("silkDropChance", 100);
+                for (String perm : player.getEffectivePermissions().stream().map(PermissionAttachmentInfo::getPermission).collect(Collectors.toList())) {
+                    if (perm.startsWith("silkspawners.dropchance.")) {
+                        try {
+                            dropChance = Integer.parseInt(perm.split("silkspawners.dropchance.")[1]);
+                            if (dropChance > 0) {
+                                break;
+                            }
+                        } catch (NumberFormatException ignore) {
+                        }
+                    }
+                }
+                if (dropChance > 100) {
+                    dropChance = 100;
+                }
+                if (dropChance <= 0) {
+                    dropChance = plugin.config.getInt("silkDropChance", 100);
+                }
             }
 
             if (randomNumber < dropChance) {
